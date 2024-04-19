@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Debug)]
 pub enum Stmt {
     Program {
@@ -27,6 +29,13 @@ pub enum Expr {
     },
     NullLiteral {
         value: &'static str
+    },
+    PropertyLiteral {
+        key: String,
+        value: Option<Box<Expr>>
+    },
+    ObjectLiteral {
+        props: Vec<Box<Expr>>
     },
     AssignExpr {
         assigne: Box<Expr>,

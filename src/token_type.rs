@@ -7,10 +7,16 @@ pub enum TokenType {
     String,
     Identifier,
     Equals,
+    Comma,
+    Colon,
     SemiColon,
     Let,
-    OpenParen,
-    CloseParen,
+    OpenParen, // (
+    CloseParen, // )
+    OpenBrace, // [
+    CloseBrace, // ]
+    OpenBracket, // [
+    CloseBracket, // ]
     BinOp,
     EOF
 }

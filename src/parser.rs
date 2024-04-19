@@ -49,8 +49,6 @@ impl Parser {
 
         let value_expr = self.parse_expr();
 
-        self.expect(TokenType::SemiColon);
-
         Stmt::VarDecl { name: name, value: Some(value_expr) }
     }
 
@@ -59,7 +57,7 @@ impl Parser {
     }
 
     fn parse_assign_expr(&mut self) -> Expr {
-        let left = self.parse_additive_expr(); // latser will be ObjectExpr
+        let left = self.parse_object_expr();
 
         if self.at().type_ == TokenType::Equals {
             self.eat();
@@ -70,6 +68,56 @@ impl Parser {
         }
 
         left
+    }
+
+    fn parse_object_expr(&mut self) -> Expr {
+        if self.at().type_ == TokenType::OpenBracket {
+            self.eat();
+
+            let mut props: Vec<Box<Expr>> = Vec::new();
+
+            while self.not_eof() && self.at().type_ != TokenType::CloseBracket {
+                let key = self.expect(TokenType::Identifier).value;
+
+                if self.at().type_ == TokenType::Comma {
+                    self.eat();
+
+                    props.push(
+                        Box::new(
+                            Expr::PropertyLiteral { key: key, value: None }
+                        )
+                    );
+                    continue;
+                } else if self.at().type_ == TokenType::CloseBracket {
+                    props.push(
+                        Box::new(
+                            Expr::PropertyLiteral { key: key, value: None }
+                        )
+                    );
+                    continue;
+                }
+
+                self.expect(TokenType::Colon);
+
+                let value = self.parse_expr();
+
+                props.push(
+                    Box::new(
+                        Expr::PropertyLiteral { key, value: Some(Box::new(value)) }
+                    )
+                );
+
+                if self.at().type_ != TokenType::CloseBracket {
+                    self.expect(TokenType::Comma);
+                }
+            }
+
+            self.expect(TokenType::CloseBracket);
+
+            Expr::ObjectLiteral { props }
+        } else {
+            self.parse_additive_expr()
+        }
     }
 
     fn parse_additive_expr(&mut self) -> Expr {

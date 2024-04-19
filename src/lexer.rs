@@ -39,6 +39,14 @@ pub fn tokenize(src: String) -> Vec<Token> {
             tokens.push(
                 Token::new(src.pop_front().unwrap().to_string(), TokenType::CloseParen)
             )
+        } else if src[0] == "{" {
+            tokens.push(
+                Token::new(src.pop_front().unwrap().to_string(), TokenType::OpenBracket)
+            )
+        } else if src[0] == "}" {
+            tokens.push(
+                Token::new(src.pop_front().unwrap().to_string(), TokenType::CloseBracket)
+            )
         } else if ["+", "-", "*", "/", "%"].contains(&src[0]) {
             tokens.push(
                 Token::new(src.pop_front().unwrap().to_string(), TokenType::BinOp)
@@ -51,7 +59,15 @@ pub fn tokenize(src: String) -> Vec<Token> {
             tokens.push(
                 Token::new(src.pop_front().unwrap().to_string(), TokenType::SemiColon)
             )
-        } else {
+        } else if src[0] == ":" {
+            tokens.push(
+                Token::new(src.pop_front().unwrap().to_string(), TokenType::Colon)
+            )
+        }  else if src[0] == "," {
+            tokens.push(
+                Token::new(src.pop_front().unwrap().to_string(), TokenType::Comma)
+            )
+        }  else {
             // Handle multicharacter tokens
             if is_int(src[0]) {
                 let mut num = String::new();
@@ -103,7 +119,7 @@ fn is_int(target: &str) -> bool {
 }
 
 fn is_skippable(target: &str) -> bool {
-    [" ", "\n", "\t"].contains(&target)
+    [" ", "\n", "\t", "\r"].contains(&target)
 }
 
 pub fn get_reserved_keywords() -> HashMap<&'static str, TokenType> {
