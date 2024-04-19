@@ -1,7 +1,15 @@
 #[derive(Debug)]
 pub enum Stmt {
-    Program { body: Vec<Stmt> },
-    Expr { expr: Expr }
+    Program {
+        body: Vec<Stmt>
+    },
+    Expr {
+        expr: Expr
+    },
+    VarDecl {
+        name: String,
+        value: Option<Expr>
+    }
 }
 
 #[derive(Debug)]
@@ -16,5 +24,12 @@ pub enum Expr {
     },
     NumericLiteral {
         value: f64
+    },
+    NullLiteral {
+        value: &'static str
+    },
+    AssignExpr {
+        assigne: Box<Expr>,
+        value: Box<Expr>
     }
 }

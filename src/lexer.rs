@@ -39,13 +39,17 @@ pub fn tokenize(src: String) -> Vec<Token> {
             tokens.push(
                 Token::new(src.pop_front().unwrap().to_string(), TokenType::CloseParen)
             )
-        } else if ["+", "-", "*", "/"].contains(&src[0]) {
+        } else if ["+", "-", "*", "/", "%"].contains(&src[0]) {
             tokens.push(
                 Token::new(src.pop_front().unwrap().to_string(), TokenType::BinOp)
             )
         } else if src[0] == "=" {
             tokens.push(
                 Token::new(src.pop_front().unwrap().to_string(), TokenType::Equals)
+            )
+        } else if src[0] == ";" {
+            tokens.push(
+                Token::new(src.pop_front().unwrap().to_string(), TokenType::SemiColon)
             )
         } else {
             // Handle multicharacter tokens
@@ -106,6 +110,7 @@ pub fn get_reserved_keywords() -> HashMap<&'static str, TokenType> {
     let mut hm = HashMap::new();
 
     hm.insert("let", TokenType::Let);
+    hm.insert("null", TokenType::Null);
 
     hm
 }

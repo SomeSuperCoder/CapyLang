@@ -25,17 +25,73 @@ impl Parser {
     }
 
     fn parse_stmt(&mut self) -> Stmt {
-        Stmt::Expr { expr: self.parse_expr() }
+        match self.at().type_ {
+            TokenType::Let => {
+                self.parse_var_decl()
+            },
+            _ => {
+                Stmt::Expr { expr: self.parse_expr() }
+            }
+        }
+    }
+
+    fn parse_var_decl(&mut self) -> Stmt {
+        self.eat(); // Remove the let keyword
+
+        let name = self.expect(TokenType::Identifier).value;
+
+        if self.at().type_ == TokenType::SemiColon {
+            self.eat();
+            return Stmt::VarDecl { name: name, value: None }
+        }
+
+        self.expect(TokenType::Equals);
+
+        let value_expr = self.parse_expr();
+
+        self.expect(TokenType::SemiColon);
+
+        Stmt::VarDecl { name: name, value: Some(value_expr) }
     }
 
     fn parse_expr(&mut self) -> Expr {
-        self.parse_additive_expr()
+        self.parse_assign_expr()
+    }
+
+    fn parse_assign_expr(&mut self) -> Expr {
+        let left = self.parse_additive_expr(); // latser will be ObjectExpr
+
+        if self.at().type_ == TokenType::Equals {
+            self.eat();
+
+            let value = self.parse_assign_expr();
+
+            return Expr::AssignExpr { assigne: Box::new(left), value: Box::new(value) }
+        }
+
+        left
     }
 
     fn parse_additive_expr(&mut self) -> Expr {
-        let mut left = self.parse_primary_expr();
+        let mut left = self.parse_mult_expr();
 
         while ["+", "-"].contains(&self.at().value.as_str()) {
+            let op = self.eat().value;
+            let right = self.parse_mult_expr();
+            left = Expr::BinaryExpr {
+                left: Box::new(left),
+                right: Box::new(right),
+                operator: op
+            };
+        }
+
+        left
+    }
+
+    fn parse_mult_expr(&mut self) -> Expr {
+        let mut left = self.parse_primary_expr();
+
+        while ["*", "/", "%"].contains(&self.at().value.as_str()) {
             let op = self.eat().value;
             let right = self.parse_primary_expr();
             left = Expr::BinaryExpr {
@@ -55,9 +111,20 @@ impl Parser {
             TokenType::Identifier => {
                 Expr::Identifier { symbol: self.eat().value }
             },
+            TokenType::Null => {
+                self.eat();
+                Expr::NullLiteral { value: "null" }
+            },
             TokenType::Number => {
                 Expr::NumericLiteral { value: self.eat().value.parse().expect("Error parsing float") }
             },
+            TokenType::OpenParen => {
+                self.eat(); // Eat open paren
+                let value = self.parse_expr();
+                self.expect(TokenType::CloseParen); // Eat close paren
+
+                value
+            }
             _ => {
                 panic!("Unexpected token found while parsing: {:?}", tk)
             }
@@ -70,6 +137,19 @@ impl Parser {
 
     fn eat(&mut self) -> Token {
         self.tokens.pop_front().unwrap()
+    }
+
+    fn expect(&mut self, type_: TokenType) -> Token {
+        let prev = self.tokens.pop_front();
+
+        if let Some(prev) = prev {
+            if prev.type_ != type_ {
+                panic!("ParseError: expcted {:?}, found {:?}", type_, prev.type_)
+            }
+            prev
+        } else {
+            panic!("ParseError: EOF while parsing, expcted {:?}", type_)
+        }
     }
 }
 
