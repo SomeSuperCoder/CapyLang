@@ -39,13 +39,21 @@ pub fn tokenize(src: String) -> Vec<Token> {
             tokens.push(
                 Token::new(src.pop_front().unwrap().to_string(), TokenType::CloseParen)
             )
-        } else if src[0] == "{" {
+        } else if src[0] == "[" {
             tokens.push(
                 Token::new(src.pop_front().unwrap().to_string(), TokenType::OpenBracket)
             )
-        } else if src[0] == "}" {
+        } else if src[0] == "]" {
             tokens.push(
                 Token::new(src.pop_front().unwrap().to_string(), TokenType::CloseBracket)
+            )
+        } else if src[0] == "{" {
+            tokens.push(
+                Token::new(src.pop_front().unwrap().to_string(), TokenType::OpenBrace)
+            )
+        } else if src[0] == "}" {
+            tokens.push(
+                Token::new(src.pop_front().unwrap().to_string(), TokenType::CloseBrace)
             )
         } else if ["+", "-", "*", "/", "%"].contains(&src[0]) {
             tokens.push(
@@ -63,11 +71,15 @@ pub fn tokenize(src: String) -> Vec<Token> {
             tokens.push(
                 Token::new(src.pop_front().unwrap().to_string(), TokenType::Colon)
             )
-        }  else if src[0] == "," {
+        } else if src[0] == "," {
             tokens.push(
                 Token::new(src.pop_front().unwrap().to_string(), TokenType::Comma)
             )
-        }  else {
+        } else if src[0] == "." {
+            tokens.push(
+                Token::new(src.pop_front().unwrap().to_string(), TokenType::Dot)
+            )
+        } else {
             // Handle multicharacter tokens
             if is_int(src[0]) {
                 let mut num = String::new();

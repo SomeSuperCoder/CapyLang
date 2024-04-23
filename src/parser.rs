@@ -71,12 +71,12 @@ impl Parser {
     }
 
     fn parse_object_expr(&mut self) -> Expr {
-        if self.at().type_ == TokenType::OpenBracket {
+        if self.at().type_ == TokenType::OpenBrace {
             self.eat();
 
             let mut props: Vec<Box<Expr>> = Vec::new();
 
-            while self.not_eof() && self.at().type_ != TokenType::CloseBracket {
+            while self.not_eof() && self.at().type_ != TokenType::CloseBrace {
                 let key = self.expect(TokenType::Identifier).value;
 
                 if self.at().type_ == TokenType::Comma {
@@ -88,7 +88,7 @@ impl Parser {
                         )
                     );
                     continue;
-                } else if self.at().type_ == TokenType::CloseBracket {
+                } else if self.at().type_ == TokenType::CloseBrace {
                     props.push(
                         Box::new(
                             Expr::PropertyLiteral { key: key, value: None }
@@ -107,12 +107,12 @@ impl Parser {
                     )
                 );
 
-                if self.at().type_ != TokenType::CloseBracket {
+                if self.at().type_ != TokenType::CloseBrace {
                     self.expect(TokenType::Comma);
                 }
             }
 
-            self.expect(TokenType::CloseBracket);
+            self.expect(TokenType::CloseBrace);
 
             Expr::ObjectLiteral { props }
         } else {
@@ -137,11 +137,11 @@ impl Parser {
     }
 
     fn parse_mult_expr(&mut self) -> Expr {
-        let mut left = self.parse_primary_expr();
+        let mut left = self.parse_call_member_expr();
 
         while ["*", "/", "%"].contains(&self.at().value.as_str()) {
             let op = self.eat().value;
-            let right = self.parse_primary_expr();
+            let right = self.parse_call_member_expr();
             left = Expr::BinaryExpr {
                 left: Box::new(left),
                 right: Box::new(right),
@@ -151,6 +151,86 @@ impl Parser {
 
         left
     }
+    
+    // Call member zone
+    fn parse_call_member_expr(&mut self) -> Expr {
+        let member = self.parse_member_expr();
+
+        if self.at().type_ == TokenType::OpenParen {
+            self.prase_call_expr(member)
+        } else {
+            member
+        }
+    }
+
+    fn prase_call_expr(&mut self, calle: Expr) -> Expr {
+        let mut call_expr = Expr::CallExpr { args: self.parse_args(), calle: Box::new(calle) };
+
+        if self.at().type_ == TokenType::OpenParen {
+            call_expr = self.prase_call_expr(call_expr);
+        }
+
+        call_expr
+    }
+
+    fn parse_args(&mut self) -> Vec<Expr> {
+        self.expect(TokenType::OpenParen);
+
+        let args;
+        if self.at().type_ == TokenType::CloseParen {
+            args = Vec::new()
+        } else {
+            args = self.parse_args_list()
+        }
+
+        self.expect(TokenType::CloseParen);
+
+        args
+    }
+
+    fn parse_args_list(&mut self) -> Vec<Expr> {
+        let mut args = Vec::new();
+
+        args.push(self.parse_assign_expr());
+
+
+        while self.at().type_ != TokenType::Comma {
+            self.eat(); // Is this currect?
+            args.push(self.parse_assign_expr());
+        }
+
+        args
+    }
+
+    fn parse_member_expr(&mut self) -> Expr {
+        let mut obj = self.parse_primary_expr();
+
+        while self.at().type_ == TokenType::Dot || self.at().type_ == TokenType::OpenBracket {
+            let op = self.eat();
+            let prop;
+            let computed;
+
+            // not-computed aka obj.expr
+            if op.type_ == TokenType::Dot {
+                computed = false;
+                // get identifyer
+                prop = self.parse_primary_expr();
+
+                if let Expr::Identifier { symbol: _ } = &prop {} else {
+                    panic!("Can only access propertes of varaibles")
+                }
+            } else { // computed value aka obj["aaaa"]
+                computed = true;
+                prop = self.parse_expr();
+                self.expect(TokenType::CloseBracket);
+            }
+
+            obj = Expr::MemberExpr { object: Box::new(obj), prop: Box::new(prop), computed }
+        }
+
+        obj
+    }
+    // ==========================
 
     fn parse_primary_expr(&mut self) -> Expr {
         let tk = self.at().type_;
@@ -204,11 +284,10 @@ impl Parser {
 
 // Order of Precedence
 // AssignmentExpr
-// MemberExpr
-// Function call
-// Logical Expr
-// CompirationExpr
+// Object
 // AdditiveExpr
 // MultiplicitaveExpr
+// Call
+// Member
 // UndaryExpr
 // PrimaryExpr

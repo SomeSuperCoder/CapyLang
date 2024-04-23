@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 #[derive(Debug)]
 pub enum Stmt {
     Program {
@@ -14,7 +12,7 @@ pub enum Stmt {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expr {
     BinaryExpr {
         left: Box<Expr>,
@@ -40,5 +38,20 @@ pub enum Expr {
     AssignExpr {
         assigne: Box<Expr>,
         value: Box<Expr>
+    },
+    MemberExpr {
+        object: Box<Expr>,
+        prop: Box<Expr>,
+        computed: bool
+    },
+    CallExpr {
+        args: Vec<Expr>,
+        calle: Box<Expr>
+    }
+}
+
+impl Expr {
+    pub fn as_stmt(&self) -> Stmt {
+        Stmt::Expr { expr: self.clone() }
     }
 }

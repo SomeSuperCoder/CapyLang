@@ -8,13 +8,14 @@ pub enum TokenType {
     Identifier,
     Equals,
     Comma,
+    Dot,
     Colon,
     SemiColon,
     Let,
     OpenParen, // (
     CloseParen, // )
-    OpenBrace, // [
-    CloseBrace, // ]
+    OpenBrace, // {
+    CloseBrace, // }
     OpenBracket, // [
     CloseBracket, // ]
     BinOp,

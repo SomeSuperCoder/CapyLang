@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{ast::{Expr, Stmt}, enviorment::Enviorment, values::Value};
 
@@ -28,6 +28,9 @@ pub fn eval(ast_node: Stmt, env: Rc<RefCell<Enviorment>>) -> Value {
                 Expr::Identifier { symbol } => {
                     eval_identifier(symbol, env.clone())
                 },
+                Expr::ObjectLiteral { props } => {
+                    eval_object_expr(props, env)
+                }
                 Expr::BinaryExpr { left, right, operator } => {
                     eval_bin_expr(*left, *right, operator.as_str(), env.clone())
                 },
@@ -96,6 +99,27 @@ pub fn eval_num_bin_expr(l: f64, r: f64, operator: &str, _env: Rc<RefCell<Envior
 
 pub fn eval_identifier(name: String, env: Rc<RefCell<Enviorment>>) -> Value {
     Enviorment::lookup(env.clone(), name)
+}
+
+pub fn eval_object_expr(props: Vec<Box<Expr>>, env: Rc<RefCell<Enviorment>>) -> Value {
+    let mut data = HashMap::new();
+
+    for prop in props {
+        let prop = *prop;
+
+        if let Expr::PropertyLiteral { key, value } = prop {
+            if let Some(value)  = value {
+                data.insert(key, eval(Stmt::Expr { expr: *value }, env.clone()));
+
+            } else {
+                data.insert(key.clone(), Enviorment::lookup(env.clone(), key));
+            }
+        } else {
+            panic!("UnexpectedError: expected PropertyLiteral, got: {:?}", prop)
+        }
+    }
+    
+    Value::Object { data }
 }
 
 pub fn eval_var_decl(name: String, value: Option<Expr>, env: Rc<RefCell<Enviorment>>) -> Value {
